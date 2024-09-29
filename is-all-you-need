@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meditation Loading</title>
+    <style>
+        body, html {
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f0f0f0;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            position: relative;
+        }
+
+        #loading-bar-container {
+            width: 300px; /* Width of the loading bar container */
+            height: 10px; /* Height of the loading bar */
+            background-color: #ddd;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        #loading-bar {
+            width: 0%;
+            height: 100%;
+            background-color: #1F51FF;
+            transition: width 0.1s;
+        }
+
+        #message {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            font-size: 36px;
+            color: #333;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        /* Disable right-click */
+        body {
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="loading-bar-container">
+        <div id="loading-bar"></div>
+    </div>
+
+    <div id="message">Hope you enjoyed your meditation session!</div>
+
+    <script src="https://cdn.jsdelivr.net/npm/webgazer"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            let gazeDetected = false;
+            let progress = 0;
+            let startTime = null;
+            let sessionComplete = false; // Track if the session is complete
+            const loadingBar = document.getElementById("loading-bar");
+            const message = document.getElementById("message");
+
+            // Initialize WebGazer
+            function startEyeTracking() {
+                webgazer.setGazeListener((data, elapsedTime) => {
+                    if (data == null) {
+                        gazeDetected = false;
+                        resetProgress();
+                        return;
+                    }
+
+                    const x = data.x;
+                    const y = data.y;
+
+                    // Check if gaze is within the viewport
+                    if (x >= 0 && x <= window.innerWidth + 100 && y >= 0 && y <= window.innerHeight + 100) {
+                        gazeDetected = true;
+                    } else {
+                        gazeDetected = false;
+                        resetProgress();
+                    }
+                }).begin();
+
+                webgazer.showVideo(false).showPredictionPoints(false);
+            }
+
+            // Update the progress bar based on time and eye tracking
+            function updateProgress() {
+                if (gazeDetected && progress < 100 && !sessionComplete) {
+                    if (!startTime) {
+                        startTime = Date.now();
+                    }
+                    const elapsedTime = (Date.now() - startTime) / 1000; // in seconds
+                    progress = (elapsedTime / 3600) * 100; // 1 hour = 3600 seconds
+
+                    loadingBar.style.width = progress + "%";
+
+                    if (progress >= 100) {
+                        finishSession();
+                        return;
+                    }
+                } else if (!gazeDetected && !sessionComplete) {
+                    resetProgress(); // Reset if gaze is not detected and session is not complete
+                }
+
+                // Call updateProgress every second
+                setTimeout(updateProgress, 1000);
+            }
+
+            // Reset the progress if the user looks away or interacts with the computer
+            function resetProgress() {
+                if (!sessionComplete) { // Only reset if the session is not complete
+                    progress = 0;
+                    loadingBar.style.width = "0%";
+                    startTime = null;
+                    message.style.display = "none"; // Hide the message during progress
+                }
+            }
+
+            // Finish the session
+            function finishSession() {
+                document.getElementById("loading-bar-container").style.display = "none"; // Hide loading bar container
+                message.style.display = "block"; // Show the message after finishing
+                sessionComplete = true; // Mark the session as complete
+            }
+
+            // Handle window blur event to reset progress
+            window.addEventListener('blur', resetProgress); // Reset when the window loses focus
+
+            // Handle mouse movement event to reset progress
+            window.addEventListener('mousemove', resetProgress); // Reset when mouse moves
+
+            // Disable right-click functionality
+            document.addEventListener('contextmenu', function (e) {
+                e.preventDefault();
+            });
+
+            // Start the eye-tracking and progress bar on page load
+            startEyeTracking();
+            updateProgress();
+        });
+    </script>
+</body>
+</html>
