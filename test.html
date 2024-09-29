@@ -74,12 +74,12 @@
             const loadingBar = document.getElementById("loading-bar");
             const message = document.getElementById("message");
 
-            // Define the center region (50% of the screen dimensions)
-            const centerRegion = {
-                xMin: window.innerWidth * 0.25,
-                xMax: window.innerWidth * 0.75,
-                yMin: window.innerHeight * 0.25,
-                yMax: window.innerHeight * 0.75
+            // Define a smaller, stricter center region (10% of the screen)
+            const strictCenterRegion = {
+                xMin: window.innerWidth * 0.45,
+                xMax: window.innerWidth * 0.55,
+                yMin: window.innerHeight * 0.45,
+                yMax: window.innerHeight * 0.55
             };
 
             // Initialize WebGazer
@@ -94,8 +94,8 @@
                     const x = data.x;
                     const y = data.y;
 
-                    // Check if gaze is within the center of the screen (strict region)
-                    if (x >= centerRegion.xMin && x <= centerRegion.xMax && y >= centerRegion.yMin && y <= centerRegion.yMax) {
+                    // Check if gaze is within the smaller center region
+                    if (x >= strictCenterRegion.xMin && x <= strictCenterRegion.xMax && y >= strictCenterRegion.yMin && y <= strictCenterRegion.yMax) {
                         gazeDetected = true;
                     } else {
                         gazeDetected = false;
