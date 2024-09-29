@@ -70,51 +70,40 @@
             let gazeDetected = false;
             let progress = 0;
             let startTime = null;
-            let sessionComplete = false;
-            let gazeLostStart = null; // Track the time when gaze is lost
-            const gazeThreshold = 500; // Threshold in milliseconds before resetting
+            let sessionComplete = false; // Track if the session is complete
             const loadingBar = document.getElementById("loading-bar");
             const message = document.getElementById("message");
+
+            // Define the center region (50% of the screen dimensions)
+            const centerRegion = {
+                xMin: window.innerWidth * 0.25,
+                xMax: window.innerWidth * 0.75,
+                yMin: window.innerHeight * 0.25,
+                yMax: window.innerHeight * 0.75
+            };
 
             // Initialize WebGazer
             function startEyeTracking() {
                 webgazer.setGazeListener((data, elapsedTime) => {
                     if (data == null) {
-                        handleGazeLoss();
+                        gazeDetected = false;
+                        resetProgress();
                         return;
                     }
 
                     const x = data.x;
                     const y = data.y;
 
-                    // Check if gaze is strictly within the viewport
-                    if (x >= 0 && x <= window.innerWidth && y >= 0 && y <= window.innerHeight) {
-                        handleGazeDetected();
+                    // Check if gaze is within the center of the screen (strict region)
+                    if (x >= centerRegion.xMin && x <= centerRegion.xMax && y >= centerRegion.yMin && y <= centerRegion.yMax) {
+                        gazeDetected = true;
                     } else {
-                        handleGazeLoss();
+                        gazeDetected = false;
+                        resetProgress();
                     }
                 }).begin();
 
                 webgazer.showVideo(false).showPredictionPoints(false);
-            }
-
-            // Handle gaze detection
-            function handleGazeDetected() {
-                gazeDetected = true;
-                gazeLostStart = null; // Reset the loss timer
-            }
-
-            // Handle gaze loss (initiate delay before reset)
-            function handleGazeLoss() {
-                if (!gazeLostStart) {
-                    gazeLostStart = Date.now(); // Record the time when gaze is lost
-                }
-
-                const timeSinceLost = Date.now() - gazeLostStart;
-                if (timeSinceLost >= gazeThreshold) {
-                    gazeDetected = false;
-                    resetProgress(); // Reset progress after gaze is lost for the threshold time
-                }
             }
 
             // Update the progress bar based on time and eye tracking
@@ -132,10 +121,12 @@
                         finishSession();
                         return;
                     }
+                } else if (!gazeDetected && !sessionComplete) {
+                    resetProgress(); // Reset if gaze is not detected and session is not complete
                 }
 
-                // Call updateProgress every 200ms (faster updates)
-                setTimeout(updateProgress, 200);
+                // Call updateProgress every second
+                setTimeout(updateProgress, 1000);
             }
 
             // Reset the progress if the user looks away or interacts with the computer
